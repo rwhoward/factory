@@ -8,10 +8,10 @@ A ticket ID is the issue number. Dependencies live on the issue's last line:
 Blocked by: #12, #14
 ```
 
-## list-ready
+## list
 
 ```bash
-gh issue list --state open --label factory-ready --limit 100 --json number,title --jq '.[] | "\(.number)\t\(.title)"'
+gh issue list --state open --label <marker> --limit 100 --json number,title --jq '.[] | "\(.number)\t\(.title)"'
 ```
 
 ## show
@@ -70,4 +70,12 @@ gh issue edit <id> --remove-label <old> --add-label <new>
 
 ```bash
 gh issue comment <id> --body-file <file>
+```
+
+## close
+
+GitHub closes the issue by itself when its PR merges into the default branch. The router closes it when the base branch is a different one.
+
+```bash
+gh issue close <id> --reason completed
 ```

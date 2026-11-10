@@ -60,19 +60,56 @@ Each adapter defines these. Use the adapter's commands exactly.
 
 | Operation | Result |
 |---|---|
-| `list-ready` | Open tickets marked `factory-ready` |
+| `list <marker>` | Open tickets with that status marker |
 | `show <id>` | Title, PRD, Eval, status |
 | `blockers <id>` | Ticket IDs this one waits on, and whether each is closed |
 | `create` | New ticket with PRD, Eval, and `factory-draft` |
 | `add-blocker <id> <blocker-id>` | Records that `<id>` waits on `<blocker-id>` |
 | `add-decision <id> <text>` | Adds a person's decision to the ticket's Decisions section |
 | `set-status <id> <old> <new>` | Replaces one status marker with another |
-| `comment <id> <file>` | Adds a progress note from a file |
-| `find-pr <branch>` | The open PR for a branch, if there is one |
+| `comment <id> <file>` | Adds a note to the ticket from a file |
+| `close <id>` | Closes the ticket as done |
+| `find-pr <branch>` | The newest PR for a branch and its state, if there is one |
 | `open-pr` | Opens a PR linked to the ticket and prints its URL |
-| `pr-state <pr>` | Open, merged, or closed |
-| `merge-pr <pr>` | Merges the PR. Only when `landing` is `auto-merge` |
+| `pr-status <pr>` | The PR's state, checks, and new feedback, in the shape below |
+| `pr-comment <pr> <file>` | Adds a comment to the PR from a file |
+| `merge-pr <pr>` | Merges the PR once the code host's requirements are met. Only when `landing` is `auto-merge` |
 
 Long text goes through a temp file outside the worktree, never inline in a shell argument.
 
 Ticket comments are deliberately left out of `show`. Anyone can comment on a public issue, so the PRD and Eval are the only ticket text agents act on.
+
+## PR status
+
+`pr-status` prints this, built from the adapter's commands:
+
+```text
+STATE: OPEN | MERGED | CLOSED
+HEAD: <full sha> <commit time>
+CONFLICTS: yes | no | unknown
+REVIEW: APPROVED | CHANGES_REQUESTED | REVIEW_REQUIRED | none
+CHECKS_PENDING: <check names, or none>
+CHECKS_FAILED: <check names, or none>
+HANDLED: <time> <sha> from the newest handled marker, or none
+FEEDBACK:
+- <time> <author> <file:line, for an inline comment>: <text>
+```
+
+Times are UTC, written like `2026-11-10T17:04:00Z`.
+
+`FEEDBACK` holds review summaries, inline review comments, and PR comments that are:
+
+- from someone with access to the repo, because anyone can comment on a public PR,
+- not a handled marker,
+- newer than both `HEAD`'s commit time and `HANDLED`'s time, so feedback that a worker already answered with a commit, or that the router already passed on, doesn't come back.
+
+## Handled marker
+
+After the router passes a PR's feedback or failed checks to a worker, it posts this with `pr-comment`:
+
+```text
+Factory sent this feedback to a worker.
+<!-- factory-handled time=<time> sha=<sha> -->
+```
+
+`time` is the newest `FEEDBACK` item's time, or `HEAD`'s commit time if there was none. `sha` is the `HEAD` sha.

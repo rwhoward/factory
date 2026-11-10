@@ -21,7 +21,7 @@ Set up this repo for the factory. Fill in everything you can detect, and ask onl
    - For Basic, set `ado.evalField` to `System.Description`.
 5. Set `baseBranch` from `git symbolic-ref --short refs/remotes/origin/HEAD`, without the `origin/` prefix.
 6. Fill in `commands` from what the repo uses, such as `package.json` scripts or a `.sln` file. Leave a command empty if you can't tell, and say so.
-7. Ask for `landing`: `pr` leaves every PR for a person to merge, and `auto-merge` merges after the checker passes. Suggest `pr`.
+7. Ask for `landing`: `pr` leaves every PR for a person to merge, and `auto-merge` merges after the checker and the PR's CI checks pass, through the code host's own auto-merge so branch protection still applies. Suggest `pr`.
 8. Write the result to `.claude/factory.json`, starting from `${CLAUDE_PLUGIN_ROOT}/templates/factory.json`. If the file already exists, show what would change and ask first.
 9. Add `.claude/worktrees/` to `.gitignore` if it's missing.
 10. Check the tools the config needs, and for anything missing give the user the exact fix rather than installing it:

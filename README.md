@@ -14,7 +14,7 @@ Router ◄──► Tracker (GitHub Issues or ADO Boards)
  ├──► Worker (own worktree) ──► Tester
  ├──► Merger (updates the branch, pushes, opens the PR)
  ├──► Checker (verifies the pushed branch from a clean checkout)
- └──► Watchdog script (flags worktrees that go quiet)
+ └──► Watchdog script (flags worktrees that go quiet, and wakes the router to check open PRs)
 ```
 
 Tickets carry a status marker: a label on GitHub, a tag on ADO.
@@ -28,6 +28,19 @@ Tickets carry a status marker: a label on GitHub, a tag on ADO.
 | `factory-in-review` | PR open and checker passed |
 
 A ticket is done when it closes, which happens when its PR merges.
+
+While a PR is in review, the router checks it each time the watchdog exits, about every nine minutes:
+
+- **Review comments and failed CI** go back to the ticket's worker. The fix lands through the merger and checker again.
+- **Merge conflicts** go to the merger.
+- **A merged PR** closes the ticket if the code host didn't, and its worktree is removed.
+- **A PR closed without merging** becomes a decision for you.
+
+Only comments from people with access to the repo count as feedback. The router posts a short "Factory sent this feedback to a worker" comment on the PR, so the same feedback isn't sent twice.
+
+## Stopping and restarting
+
+You can stop the router and start it again later. On start it picks up tickets marked `factory-building`, `factory-needs-decision`, or `factory-in-review` whose `factory/<id>-...` branch exists on this machine. An interrupted worker's leftover changes are committed to its branch, and a new worker continues from there. Tickets with those markers but no branch here are listed and left alone, since another machine may be working on them.
 
 ## Install
 
@@ -80,7 +93,7 @@ You can answer its decision questions and add tickets while work is running.
 | `tracker` | `github` or `ado` |
 | `codeHost` | `github` or `azure-repos` |
 | `baseBranch` | The branch work starts from and PRs target |
-| `landing` | `pr` leaves merging to a person. `auto-merge` merges after the checker passes |
+| `landing` | `pr` leaves merging to a person. `auto-merge` merges after the checker and the PR's CI checks pass, using the code host's auto-merge so branch protection still applies |
 | `maxWorkers` | How many workers run at once |
 | `commands` | `setup`, `build`, `test`, and `e2e` commands for the repo. Leave any blank |
 | `ado` | Organization, project, repository, work item type, and which field holds the Eval |
@@ -117,6 +130,10 @@ bash tests/watchdog.test.sh
 bash tests/cleanup.test.sh
 ```
 
+```bash
+bash tests/release.test.sh
+```
+
 ## Safety
 
 - **`factory-ready` directs the agents.** Anyone who can set it can tell them what to build, so keep that permission to people you trust.
@@ -135,10 +152,11 @@ Tested on Claude Code 2.1.317 on Windows, in throwaway repos with a stub `gh` an
 | Worktree isolation, tester started by a worker | Tested |
 | Worker stops for a decision, then a resume in the same worktree | Tested |
 | Router catching an open decision before starting a worker | Tested |
-| Watchdog and cleanup scripts | Tested, with `tests/` |
+| Watchdog, cleanup, and release scripts | Tested, with `tests/` |
 | `/factory:init`, `/factory:write-tickets`, plugin install | Tested |
-| `gh` read commands | Run for real against a public repo |
+| `gh` read commands, including every `pr-status` command | Run for real against a public repo |
 | `gh` write commands | Not run for real yet |
+| Restart pickup, the PR review loop, and the round limit | Not run yet |
 | Interactive sessions, including AskUserQuestion | Not run yet |
 | Two or more workers at once, merge conflicts, a blocker unblocking a ticket | Not run yet |
 | `auto-merge` landing | Not run yet |
@@ -146,10 +164,12 @@ Tested on Claude Code 2.1.317 on Windows, in throwaway repos with a stub `gh` an
 
 ## Limits
 
-- It runs on your machine, so work stops when the session ends or the machine sleeps.
+- It runs on your machine, so work stops when the session ends or the machine sleeps. Starting the router again picks it back up.
+- While a PR is in review, the router wakes about every nine minutes to check it, which costs tokens even when nothing changed. If reviews will take days, stop the router and start it again later.
+- A worker gets three rounds of fixes for gaps, checker failures, and failed CI before the ticket is marked blocked. The count starts over when the router restarts.
 - The watchdog watches for file activity. A long test run that changes no files can get flagged, and the router then just asks that worker for its status.
 - On ADO, only tags change. The work item's State doesn't move, so board columns don't follow the ticket until its PR completes.
-- Run one router per repo at a time.
+- Run one router per repo at a time. Nothing enforces this, so two routers can pick up the same `factory-ready` ticket.
 - Gitignored files such as `.env` aren't copied into worktrees unless they're listed in `.worktreeinclude`.
 - Agent teams aren't used. Workers don't talk to each other, and everything goes through the router.
 
