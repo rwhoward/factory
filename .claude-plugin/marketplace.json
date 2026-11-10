@@ -1,0 +1,16 @@
+{
+  "name": "factory-marketplace",
+  "owner": {
+    "name": "factory contributors"
+  },
+  "metadata": {
+    "description": "Router + workers software factory for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "factory",
+      "source": "./plugins/factory",
+      "description": "Router + workers software factory with GitHub Issues and Azure DevOps Boards support."
+    }
+  ]
+}

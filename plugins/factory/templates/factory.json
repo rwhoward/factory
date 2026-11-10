@@ -1,0 +1,20 @@
+{
+  "tracker": "github",
+  "codeHost": "github",
+  "baseBranch": "main",
+  "landing": "pr",
+  "maxWorkers": 3,
+  "commands": {
+    "setup": "",
+    "build": "",
+    "test": "",
+    "e2e": ""
+  },
+  "ado": {
+    "organization": "",
+    "project": "",
+    "repository": "",
+    "workItemType": "User Story",
+    "evalField": "Microsoft.VSTS.Common.AcceptanceCriteria"
+  }
+}

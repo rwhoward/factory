@@ -1,0 +1,6 @@
+{
+  "name": "factory",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Router + workers software factory. One router session turns tracker tickets into reviewed pull requests through isolated worker agents."
+}
