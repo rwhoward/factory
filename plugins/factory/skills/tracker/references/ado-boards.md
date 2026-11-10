@@ -12,10 +12,10 @@ A ticket ID is the work item ID. Status markers are tags, because state names di
 
 Set `evalField` to `System.Description` for the Basic process, which has no Acceptance Criteria field, and put Eval after PRD in the same HTML.
 
-## list-ready
+## list
 
 ```bash
-az boards query --org ORG --project "<project>" --wiql "SELECT [System.Id], [System.Title] FROM workitems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'factory-ready' AND [System.State] NOT IN ('Closed', 'Done', 'Removed') ORDER BY [System.Id]" --query "[].{id:id, title:fields.\"System.Title\"}" -o tsv
+az boards query --org ORG --project "<project>" --wiql "SELECT [System.Id], [System.Title] FROM workitems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS '<marker>' AND [System.State] NOT IN ('Closed', 'Done', 'Removed') ORDER BY [System.Id]" --query "[].{id:id, title:fields.\"System.Title\"}" -o tsv
 ```
 
 ## show
@@ -76,4 +76,12 @@ az boards work-item update --id <id> --org ORG --fields "System.Tags=<all tags, 
 
 ```bash
 az boards work-item update --id <id> --org ORG --discussion @<file>
+```
+
+## close
+
+A PR completed in Azure Repos closes its linked work item by itself. Use this when it didn't. The closed state depends on `ado.workItemType`: `Closed` for `User Story` and `Requirement`, `Done` for `Product Backlog Item` and `Issue`. For any other type, tell the user the PR merged and leave closing the ticket to them.
+
+```bash
+az boards work-item update --id <id> --org ORG --state "<closed state>"
 ```

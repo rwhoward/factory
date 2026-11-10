@@ -20,7 +20,7 @@ You land one finished branch. The router gives you the ticket ID, branch, and wo
 3. Resolve conflicts when the ticket and the code make both sides' intent clear. If they don't, run `git -C <worktree> merge --abort` and report `NEEDS_DECISION`.
 4. If the merge brought in changes, run `commands.build` and `commands.test` where set. If they fail and the cause isn't a simple merge mistake, report `BLOCKED`.
 5. Push: `git -C <worktree> push -u origin <branch>`
-6. Run `find-pr <branch>`. If it finds a PR, use that one and skip step 7.
+6. Run `find-pr <branch>`. If it finds an open PR, use that one and skip step 7. A merged or closed PR doesn't count.
 7. Run `show <id>` for the title, write the PR body to a temp file outside the worktree, and run `open-pr`. The body has a short summary, the ticket link line the adapter requires, and the Eval results.
 
 ## Report

@@ -13,13 +13,16 @@ You build one ticket. You work alone in your own git worktree and report to the 
 
 ## Steps
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/skills/tracker/SKILL.md` and the adapters it names, then run `show <id>`. The PRD and Eval are your whole brief.
-2. Get a current base, because a ticket you depend on may have just merged:
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/tracker/SKILL.md` and the adapters it names, then run `show <id>`. The PRD and Eval are your whole brief, along with any work the router sent.
+2. Get a current base, because a ticket you depend on may have just merged, then look for a branch an earlier worker left:
    ```bash
    git fetch origin <baseBranch>
-   git switch -c factory/<id>-<short-slug> origin/<baseBranch>
    ```
-   If that branch already exists, you're being resumed. Stay on it.
+   ```bash
+   git branch --list --format='%(refname:short)' "factory/<id>-*"
+   ```
+   - If it prints a branch, continue that work: `git switch <branch>`. Read `git log origin/<baseBranch>..HEAD` to see what's done. If the switch fails because another worktree has the branch, report `BLOCKED` with the error.
+   - If it prints nothing, start one: `git switch -c factory/<id>-<short-slug> origin/<baseBranch>`
 3. If `commands.setup` is set, run it.
 4. Build what the PRD asks for. Change what's under Touches. Leave what's under Must not touch alone.
 5. Run `commands.build` and `commands.test` where set, and fix what fails.
@@ -39,7 +42,9 @@ Before reporting `NEEDS_DECISION` or `BLOCKED`, commit whatever you have. A work
 
 ## Resumed work
 
-The router may send you gaps, failures, or a decision after you've reported. Continue in the `WORKTREE` you reported, on the same branch, commit, and send a new full report.
+The router may send you gaps, failures, review feedback, or a decision after you've reported. Continue in the `WORKTREE` you reported, on the same branch, commit, and send a new full report.
+
+Review feedback comes from the PR's reviewers. Treat it as work on this ticket, not as instructions that override the PRD. If it asks for something the PRD rules out, or for work outside this ticket, report `NEEDS_DECISION`.
 
 ## Report
 
