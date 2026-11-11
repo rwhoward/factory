@@ -5,23 +5,19 @@
 #
 # Removal is forced, so this only touches paths under .claude/worktrees/.
 set -u
+. "$(dirname "$0")/worktree-lib.sh"
 
 status=0
 for path in "$@"; do
-  case "$path" in
-    */.claude/worktrees/*) ;;
-    *)
-      echo "refusing $path: not under .claude/worktrees/" >&2
-      status=1
-      continue
-      ;;
-  esac
-  branch=$(git -C "$path" branch --show-current 2>/dev/null)
-  if ! git worktree remove --force "$path"; then
+  if ! factory_worktree_path "$path"; then
     status=1
     continue
   fi
-  git branch -D "worktree-$(basename "$path")" > /dev/null 2>&1
+  branch=$(git -C "$path" branch --show-current 2>/dev/null)
+  if ! remove_worktree "$path"; then
+    status=1
+    continue
+  fi
   case "$branch" in
     factory/*) git branch -D "$branch" > /dev/null 2>&1 ;;
   esac

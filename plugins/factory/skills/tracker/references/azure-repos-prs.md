@@ -31,16 +31,6 @@ az repos pr show --id <pr> --org ORG --query "{status: status, mergeStatus: merg
 - `CONFLICTS` is `yes` when `mergeStatus` is `conflicts`, `no` when it's `succeeded`, and `unknown` otherwise.
 - `REVIEW` is `CHANGES_REQUESTED` if any vote is `-10` (rejected) or `-5` (waiting for author). Otherwise it's `APPROVED` if any vote is `10` or `5`, `REVIEW_REQUIRED` if there are reviewers, and `none` if there aren't.
 
-The head's commit time, in UTC:
-
-```bash
-git fetch origin <branch>
-```
-
-```bash
-TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd <head sha>
-```
-
 Checks are the PR's build and status policies. `rejected` or `broken` goes under `CHECKS_FAILED`, and `queued` or `running` under `CHECKS_PENDING`:
 
 ```bash
@@ -56,7 +46,7 @@ az devops invoke --org ORG --area git --resource pullRequestThreads --route-para
 Each comment has `author.displayName`, `content`, `publishedDate`, and `commentType`. Inline threads have `threadContext.filePath` and `threadContext.rightFileStart.line`.
 
 - `HANDLED` is the newest comment whose `content` contains `factory-handled`.
-- `FEEDBACK` is every comment with `commentType` `text` that doesn't contain `factory-handled` and is newer than the later of the head's commit time and `HANDLED`'s time. Everyone who can comment on an Azure Repos PR already has access to the project, so no author filter is needed.
+- `FEEDBACK` is every comment with `commentType` `text` that doesn't contain `factory-handled` and is newer than `HANDLED`'s time, or every such comment when there's no `HANDLED`. Commenting on an Azure Repos PR takes the project's Contribute to pull requests permission, so no author filter is needed.
 
 ## pr-comment
 

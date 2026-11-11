@@ -82,6 +82,44 @@ outside="$(cd "../$(basename "$repo")-outside" && pwd)"
 bash "$script" "$outside" > /dev/null 2>&1
 [ -e "$outside" ] && pass "refuses a path outside .claude/worktrees" || fail "refuses a path outside .claude/worktrees"
 
+# A rebase stopped on a conflict. HEAD is detached, so the refusal must still name the rebase.
+git worktree add -q -b worktree-agent-f .claude/worktrees/agent-f main~1
+git -C .claude/worktrees/agent-f switch -q -c factory/6-f
+echo rebased > .claude/worktrees/agent-f/file.txt
+git -C .claude/worktrees/agent-f commit -qam rebased
+git -C .claude/worktrees/agent-f rebase -q main > /dev/null 2>&1
+output="$(bash "$script" "$repo/.claude/worktrees/agent-f" 2>&1)"
+[ -e .claude/worktrees/agent-f ] && pass "refuses a rebase in progress" || fail "refuses a rebase in progress"
+case "$output" in *"rebase is in progress"*) pass "rebase refusal names the rebase" ;; *) fail "rebase refusal names the rebase: $output" ;; esac
+
+# A cherry-pick stopped on a conflict.
+git worktree add -q -b worktree-agent-g .claude/worktrees/agent-g main~1
+git -C .claude/worktrees/agent-g switch -q -c factory/7-g
+echo picked > .claude/worktrees/agent-g/file.txt
+git -C .claude/worktrees/agent-g commit -qam picked
+before_g="$(git rev-parse factory/7-g)"
+git -C .claude/worktrees/agent-g cherry-pick main > /dev/null 2>&1
+git -C .claude/worktrees/agent-g rev-parse -q --verify CHERRY_PICK_HEAD > /dev/null && pass "setup: cherry-pick left half done" || fail "setup: cherry-pick left half done"
+output="$(bash "$script" "$repo/.claude/worktrees/agent-g" 2>&1)"
+[ ! -e .claude/worktrees/agent-g ] && pass "cherry-pick worktree removed" || fail "cherry-pick worktree removed: $output"
+[ "$(git rev-parse factory/7-g)" = "$before_g" ] && pass "half-done cherry-pick aborted, not committed" || fail "half-done cherry-pick aborted, not committed"
+
+# Conflicts with nothing to abort, as a stash pop leaves them.
+git worktree add -q -b worktree-agent-h .claude/worktrees/agent-h main~1
+git -C .claude/worktrees/agent-h switch -q -c factory/8-h
+echo stashed > .claude/worktrees/agent-h/file.txt
+git -C .claude/worktrees/agent-h stash -q
+echo committed > .claude/worktrees/agent-h/file.txt
+git -C .claude/worktrees/agent-h commit -qam committed
+before_h="$(git rev-parse factory/8-h)"
+git -C .claude/worktrees/agent-h stash pop -q > /dev/null 2>&1
+output="$(bash "$script" "$repo/.claude/worktrees/agent-h" 2>&1)"
+status=$?
+[ -e .claude/worktrees/agent-h ] && pass "refuses unresolved conflicts" || fail "refuses unresolved conflicts"
+[ "$status" -ne 0 ] && pass "conflict refusal exits non-zero" || fail "conflict refusal exits non-zero"
+[ "$(git rev-parse factory/8-h)" = "$before_h" ] && pass "conflict markers not committed" || fail "conflict markers not committed"
+case "$output" in *"unresolved conflicts"*) pass "conflict refusal says why" ;; *) fail "conflict refusal says why: $output" ;; esac
+
 cd / && rm -rf "$repo" "$repo-outside"
 
 if [ "$failures" -eq 0 ]; then
