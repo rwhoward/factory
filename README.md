@@ -36,11 +36,13 @@ While a PR is in review, the router checks it each time the watchdog exits, abou
 - **A merged PR** closes the ticket if the code host didn't, and its worktree is removed.
 - **A PR closed without merging** becomes a decision for you.
 
-Only comments from people with access to the repo count as feedback. The router posts a short "Factory sent this feedback to a worker" comment on the PR, so the same feedback isn't sent twice.
+On GitHub, only comments from people with write access to the repo count as feedback, and approvals don't count. After a worker has the feedback, the router posts a short "Factory sent this feedback to a worker" comment on the PR, so the same feedback isn't sent twice. If the router stops before posting it, the feedback may be sent again, but it isn't lost.
+
+Commits that others push to a PR's branch, such as a reviewer's committed suggestion, are merged in before the worker or merger continues.
 
 ## Stopping and restarting
 
-You can stop the router and start it again later. On start it picks up tickets marked `factory-building`, `factory-needs-decision`, or `factory-in-review` whose `factory/<id>-...` branch exists on this machine. An interrupted worker's leftover changes are committed to its branch, and a new worker continues from there. Tickets with those markers but no branch here are listed and left alone, since another machine may be working on them.
+You can stop the router and start it again later. On start it picks up tickets marked `factory-building`, `factory-needs-decision`, or `factory-in-review` whose `factory/<id>-...` branch exists on this machine. An interrupted worker's leftover changes are committed to its branch, and a new worker continues from there. Tickets with those markers but no branch here are listed and left alone, since another machine may be working on them. The router creates a ticket's branch before marking it `factory-building`, so a ticket it started always has one. A worktree whose agent stopped before switching to its ticket branch is listed for you to remove.
 
 ## Install
 
@@ -154,7 +156,7 @@ Tested on Claude Code 2.1.317 on Windows, in throwaway repos with a stub `gh` an
 | Router catching an open decision before starting a worker | Tested |
 | Watchdog, cleanup, and release scripts | Tested, with `tests/` |
 | `/factory:init`, `/factory:write-tickets`, plugin install | Tested |
-| `gh` read commands, including every `pr-status` command | Run for real against a public repo |
+| `gh` read commands | Run for real against a public repo, except the `pr-status` write-access check and the reworked `HANDLED` and review filters. Their `jq` was only checked against sample JSON |
 | `gh` write commands | Not run for real yet |
 | Restart pickup, the PR review loop, and the round limit | Not run yet |
 | Interactive sessions, including AskUserQuestion | Not run yet |

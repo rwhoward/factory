@@ -85,7 +85,7 @@ Ticket comments are deliberately left out of `show`. Anyone can comment on a pub
 
 ```text
 STATE: OPEN | MERGED | CLOSED
-HEAD: <full sha> <commit time>
+HEAD: <full sha>
 CONFLICTS: yes | no | unknown
 REVIEW: APPROVED | CHANGES_REQUESTED | REVIEW_REQUIRED | none
 CHECKS_PENDING: <check names, or none>
@@ -99,17 +99,23 @@ Times are UTC, written like `2026-11-10T17:04:00Z`.
 
 `FEEDBACK` holds review summaries, inline review comments, and PR comments that are:
 
-- from someone with access to the repo, because anyone can comment on a public PR,
+- from someone with write access to the repo, because anyone can comment on a public PR,
 - not a handled marker,
-- newer than both `HEAD`'s commit time and `HANDLED`'s time, so feedback that a worker already answered with a commit, or that the router already passed on, doesn't come back.
+- newer than `HANDLED`'s time, so feedback the router already passed on doesn't come back.
+
+A new commit on the PR doesn't count as an answer. Merge commits, a reviewer's committed suggestion, and a fix for other feedback all move `HEAD` without answering what's still open.
+
+`HANDLED` only counts markers from someone with write access too, so nobody else can hide feedback by posting one.
 
 ## Handled marker
 
-After the router passes a PR's feedback or failed checks to a worker, it posts this with `pr-comment`:
+After the router has sent a PR's feedback or failed checks to a worker, it posts this with `pr-comment`:
 
 ```text
 Factory sent this feedback to a worker.
 <!-- factory-handled time=<time> sha=<sha> -->
 ```
 
-`time` is the newest `FEEDBACK` item's time, or `HEAD`'s commit time if there was none. `sha` is the `HEAD` sha.
+`time` is the newest `FEEDBACK` item's time. With no `FEEDBACK`, it's `HANDLED`'s time, or `1970-01-01T00:00:00Z` when there's no `HANDLED` either. `sha` is the `HEAD` sha.
+
+The marker goes up only after the worker has the work. If the router stops in between, the same feedback may be sent twice, but it's never lost.

@@ -12,13 +12,22 @@ You land one finished branch. The router gives you the ticket ID, branch, and wo
 ## Steps
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/skills/tracker/SKILL.md` and the adapters it names.
-2. Update the branch:
+2. Bring in commits others pushed to the branch, such as a suggestion a reviewer committed on the PR. Skip this when the fetch says the branch isn't on origin yet.
+   ```bash
+   git -C <worktree> fetch origin <branch>
+   ```
+   ```bash
+   git -C <worktree> merge origin/<branch>
+   ```
+   Then update from the base:
    ```bash
    git -C <worktree> fetch origin <baseBranch>
+   ```
+   ```bash
    git -C <worktree> merge origin/<baseBranch>
    ```
-3. Resolve conflicts when the ticket and the code make both sides' intent clear. If they don't, run `git -C <worktree> merge --abort` and report `NEEDS_DECISION`.
-4. If the merge brought in changes, run `commands.build` and `commands.test` where set. If they fail and the cause isn't a simple merge mistake, report `BLOCKED`.
+3. Resolve conflicts from either merge when the ticket and the code make both sides' intent clear. If they don't, run `git -C <worktree> merge --abort` and report `NEEDS_DECISION`.
+4. If either merge brought in changes, run `commands.build` and `commands.test` where set. If they fail and the cause isn't a simple merge mistake, report `BLOCKED`.
 5. Push: `git -C <worktree> push -u origin <branch>`
 6. Run `find-pr <branch>`. If it finds an open PR, use that one and skip step 7. A merged or closed PR doesn't count.
 7. Run `show <id>` for the title, write the PR body to a temp file outside the worktree, and run `open-pr`. The body has a short summary, the ticket link line the adapter requires, and the Eval results.

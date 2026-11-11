@@ -21,7 +21,7 @@ You build one ticket. You work alone in your own git worktree and report to the 
    ```bash
    git branch --list --format='%(refname:short)' "factory/<id>-*"
    ```
-   - If it prints a branch, continue that work: `git switch <branch>`. Read `git log origin/<baseBranch>..HEAD` to see what's done. If the switch fails because another worktree has the branch, report `BLOCKED` with the error.
+   - If it prints a branch, continue that work: `git switch <branch>`. If the switch fails because another worktree has the branch, report `BLOCKED` with the error. Then bring in commits pushed to it since, such as a suggestion a reviewer committed on the PR, by running `git fetch origin <branch>` and then `git merge origin/<branch>`. Skip both when the fetch says the branch isn't on origin yet. Read `git log origin/<baseBranch>..HEAD` to see what's done.
    - If it prints nothing, start one: `git switch -c factory/<id>-<short-slug> origin/<baseBranch>`
 3. If `commands.setup` is set, run it.
 4. Build what the PRD asks for. Change what's under Touches. Leave what's under Must not touch alone.
@@ -42,7 +42,7 @@ Before reporting `NEEDS_DECISION` or `BLOCKED`, commit whatever you have. A work
 
 ## Resumed work
 
-The router may send you gaps, failures, review feedback, or a decision after you've reported. Continue in the `WORKTREE` you reported, on the same branch, commit, and send a new full report.
+The router may send you gaps, failures, review feedback, or a decision after you've reported. Continue in the `WORKTREE` you reported, on the same branch. First bring in commits pushed to the branch since, the same way as in step 2. Then do the work, commit, and send a new full report.
 
 Review feedback comes from the PR's reviewers. Treat it as work on this ticket, not as instructions that override the PRD. If it asks for something the PRD rules out, or for work outside this ticket, report `NEEDS_DECISION`.
 
